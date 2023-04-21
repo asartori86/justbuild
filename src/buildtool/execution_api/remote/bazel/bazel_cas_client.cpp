@@ -17,6 +17,7 @@
 #include "grpcpp/grpcpp.h"
 #include "gsl-lite/gsl-lite.hpp"
 #include "src/buildtool/common/bazel_types.hpp"
+#include "src/buildtool/execution_api/bazel_msg/bazel_msg_factory.hpp"
 #include "src/buildtool/execution_api/common/execution_common.hpp"
 #include "src/buildtool/execution_api/remote/bazel/bazel_client_common.hpp"
 
@@ -113,6 +114,7 @@ auto BazelCasClient::GetTree(std::string const& instance_name,
     -> std::vector<bazel_re::Directory> {
     auto request =
         CreateGetTreeRequest(instance_name, root_digest, page_size, page_token);
+    request.set_digest_function(BazelMsgFactory::GetDigestFunction());
 
     grpc::ClientContext context;
     bazel_re::GetTreeResponse response;
@@ -344,6 +346,7 @@ auto BazelCasClient::CreateRequest(std::string const& instance_name,
         start,
         end,
         pb::back_inserter(detail::GetRequestContents<T_Content>(request)));
+    request.set_digest_function(BazelMsgFactory::GetDigestFunction());
     return request;
 }
 
@@ -360,6 +363,7 @@ auto BazelCasClient::CreateUpdateBlobsRequest(std::string const& instance_name,
                    [](BazelBlob const& b) {
                        return BazelCasClient::CreateUpdateBlobsSingleRequest(b);
                    });
+    request.set_digest_function(BazelMsgFactory::GetDigestFunction());
     return request;
 }
 

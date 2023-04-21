@@ -16,6 +16,7 @@
 
 #include "grpcpp/grpcpp.h"
 #include "gsl-lite/gsl-lite.hpp"
+#include "src/buildtool/execution_api/bazel_msg/bazel_msg_factory.hpp"
 #include "src/buildtool/execution_api/remote/bazel/bazel_client_common.hpp"
 
 namespace bazel_re = build::bazel::remote::execution::v2;
@@ -71,6 +72,7 @@ auto BazelExecutionClient::Execute(std::string const& instance_name,
         gsl::owner<bazel_re::Digest*>{new bazel_re::Digest(action_digest)});
     request.set_allocated_execution_policy(execution_policy.release());
     request.set_allocated_results_cache_policy(results_cache_policy.release());
+    request.set_digest_function(BazelMsgFactory::GetDigestFunction());
 
     grpc::ClientContext context;
     std::unique_ptr<grpc::ClientReader<google::longrunning::Operation>> reader(

@@ -16,6 +16,7 @@
 
 #include "gsl-lite/gsl-lite.hpp"
 #include "src/buildtool/common/bazel_types.hpp"
+#include "src/buildtool/execution_api/bazel_msg/bazel_msg_factory.hpp"
 #include "src/buildtool/execution_api/remote/bazel/bazel_client_common.hpp"
 
 BazelAcClient::BazelAcClient(std::string const& server, Port port) noexcept {
@@ -39,6 +40,7 @@ auto BazelAcClient::GetActionResult(
     std::copy(inline_output_files.begin(),
               inline_output_files.end(),
               pb::back_inserter(request.mutable_inline_output_files()));
+    request.set_digest_function(BazelMsgFactory::GetDigestFunction());
 
     grpc::ClientContext context;
     bazel_re::ActionResult response;

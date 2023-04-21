@@ -237,12 +237,10 @@
     }
   , "bazel_remote_apis":
     { "repository":
-      { "type": "archive"
-      , "content": "b5deb95d544f03f1918cc9d611c7904b8173befa"
-      , "fetch": "https://github.com/bazelbuild/remote-apis/archive/v2.0.0.tar.gz"
-      , "sha256": "79204ed1fa385c03b5235f65b25ced6ac51cf4b00e45e1157beca6a28bdb8043"
-      , "sha512": "7465f4726a9cc263352f6f0ec5b065c53e2ad787611740e1a458331858bdf28d53d69ba3db3d83fbf4a578229a413ac230886b5fcd33ab76425c61b1f08ef3b3"
-      , "subdir": "remote-apis-2.0.0"
+      { "type": "git"
+      , "repository": "https://github.com/asartori86/remote-apis"
+      , "commit": "b4aa5113ee94e3d38084f3b820b84bae37d5cae2"
+      , "branch": "gitsha1"
       }
     , "target_root": "import targets"
     , "target_file_name": "TARGETS.bazel_remote_apis"

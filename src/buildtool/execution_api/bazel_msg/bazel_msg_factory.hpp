@@ -26,6 +26,7 @@
 #include "src/buildtool/common/artifact.hpp"
 #include "src/buildtool/common/artifact_digest.hpp"
 #include "src/buildtool/common/bazel_types.hpp"
+#include "src/buildtool/compatibility/compatibility.hpp"
 #include "src/buildtool/execution_api/bazel_msg/bazel_blob.hpp"
 #include "src/buildtool/execution_api/bazel_msg/bazel_common.hpp"
 #include "src/buildtool/execution_api/bazel_msg/directory_tree.hpp"
@@ -164,6 +165,14 @@ class BazelMsgFactory {
         }
         Logger::Log(LogLevel::Error, "failed to parse message from string");
         return std::nullopt;
+    }
+
+    [[nodiscard]] static auto GetDigestFunction()
+        -> bazel_re::DigestFunction_Value {
+        if (Compatibility::IsCompatible()) {
+            return bazel_re::DigestFunction_Value_SHA256;
+        }
+        return bazel_re::DigestFunction_Value_GITSHA1;
     }
 };
 

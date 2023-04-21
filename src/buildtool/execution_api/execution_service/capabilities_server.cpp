@@ -15,6 +15,7 @@
 #include "src/buildtool/execution_api/execution_service/capabilities_server.hpp"
 
 #include "src/buildtool/compatibility/compatibility.hpp"
+#include "src/buildtool/execution_api/bazel_msg/bazel_msg_factory.hpp"
 #include "src/buildtool/logging/logger.hpp"
 
 auto CapabilitiesServiceImpl::GetCapabilities(
@@ -22,16 +23,10 @@ auto CapabilitiesServiceImpl::GetCapabilities(
     const ::bazel_re::GetCapabilitiesRequest*
     /*request*/,
     ::bazel_re::ServerCapabilities* response) -> ::grpc::Status {
-    if (!Compatibility::IsCompatible()) {
-        auto const* str = "GetCapabilities not implemented";
-        Logger::Log(LogLevel::Error, str);
-        return ::grpc::Status{grpc::StatusCode::UNIMPLEMENTED, str};
-    }
     ::bazel_re::CacheCapabilities cache;
     ::bazel_re::ExecutionCapabilities exec;
 
-    cache.add_digest_function(
-        ::bazel_re::DigestFunction_Value::DigestFunction_Value_SHA256);
+    cache.add_digest_functions(BazelMsgFactory::GetDigestFunction());
     cache.mutable_action_cache_update_capabilities()->set_update_enabled(false);
     static constexpr std::size_t kMaxBatchTransferSize = 1024 * 1024;
     cache.set_max_batch_total_size_bytes(kMaxBatchTransferSize);
@@ -39,8 +34,8 @@ auto CapabilitiesServiceImpl::GetCapabilities(
                   "Max batch transfer size too large.");
     *(response->mutable_cache_capabilities()) = cache;
 
-    exec.set_digest_function(
-        ::bazel_re::DigestFunction_Value::DigestFunction_Value_SHA256);
+    exec.set_digest_function(BazelMsgFactory::GetDigestFunction());
+    exec.add_digest_functions(BazelMsgFactory::GetDigestFunction());
     exec.set_exec_enabled(true);
 
     *(response->mutable_execution_capabilities()) = exec;

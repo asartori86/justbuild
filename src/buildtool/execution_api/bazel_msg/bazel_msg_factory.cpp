@@ -211,9 +211,13 @@ template <class T>
     copy_nodes(dir.mutable_directories(), dirs);
     copy_nodes(dir.mutable_symlinks(), links);
 
+    // changed from repeated NodeProperty to NodeProperties
+    bazel_re::NodeProperties node_props;
     std::copy(props.cbegin(),
               props.cend(),
-              pb::back_inserter(dir.mutable_node_properties()));
+              pb::back_inserter(node_props.mutable_properties()));
+
+    dir.mutable_node_properties()->CopyFrom(node_props);
 
     return dir;
 }
@@ -227,9 +231,13 @@ template <class T>
     bazel_re::FileNode node;
     node.set_name(file_name);
     node.set_is_executable(IsExecutableObject(type));
+
+    bazel_re::NodeProperties node_props;
     std::copy(props.cbegin(),
               props.cend(),
-              pb::back_inserter(node.mutable_node_properties()));
+              pb::back_inserter(node_props.mutable_properties()));
+
+    node.mutable_node_properties()->CopyFrom(node_props);
     return node;
 }
 
@@ -284,6 +292,7 @@ template <class T>
     std::vector<std::string> const& args,
     std::vector<std::string> const& output_files,
     std::vector<std::string> const& output_dirs,
+    std::vector<std::string> const& output_node_properties,
     std::vector<bazel_re::Command_EnvironmentVariable> const& env_vars,
     std::vector<bazel_re::Platform_Property> const& platform_properties)
     -> CommandBundle::Ptr {
@@ -302,6 +311,10 @@ template <class T>
               std::cend(env_vars),
               pb::back_inserter(msg.mutable_environment_variables()));
 
+    std::copy(std::cbegin(output_node_properties),
+              std::cend(output_node_properties),
+              pb::back_inserter(msg.mutable_output_node_properties()));
+
     auto content_creator = [&msg] { return SerializeMessage(msg); };
 
     auto digest_creator = [](std::string const& content) -> bazel_re::Digest {
@@ -312,12 +325,11 @@ template <class T>
 }
 
 /// \brief Create bundle for protobuf message Action from Command.
-[[nodiscard]] auto CreateActionBundle(
-    bazel_re::Digest const& command,
-    bazel_re::Digest const& root_dir,
-    std::vector<std::string> const& output_node_properties,
-    bool do_not_cache,
-    std::chrono::milliseconds const& timeout) -> ActionBundle::Ptr {
+[[nodiscard]] auto CreateActionBundle(bazel_re::Digest const& command,
+                                      bazel_re::Digest const& root_dir,
+                                      bool do_not_cache,
+                                      std::chrono::milliseconds const& timeout)
+    -> ActionBundle::Ptr {
     using seconds = std::chrono::seconds;
     using nanoseconds = std::chrono::nanoseconds;
     auto sec = std::chrono::duration_cast<seconds>(timeout);
@@ -334,9 +346,6 @@ template <class T>
         gsl::owner<bazel_re::Digest*>{new bazel_re::Digest{command}});
     msg.set_allocated_input_root_digest(
         gsl::owner<bazel_re::Digest*>{new bazel_re::Digest{root_dir}});
-    std::copy(output_node_properties.cbegin(),
-              output_node_properties.cend(),
-              pb::back_inserter(msg.mutable_output_node_properties()));
 
     auto content_creator = [&msg] { return SerializeMessage(msg); };
 
@@ -619,12 +628,16 @@ auto BazelMsgFactory::CreateActionDigestFromCommandLine(
     std::chrono::milliseconds const& timeout,
     std::optional<BlobStoreFunc> const& store_blob) -> bazel_re::Digest {
     // create command
-    auto cmd = CreateCommandBundle(
-        cmdline, output_files, output_dirs, env_vars, properties);
+    auto cmd = CreateCommandBundle(cmdline,
+                                   output_files,
+                                   output_dirs,
+                                   output_node_properties,
+                                   env_vars,
+                                   properties);
 
     // create action
-    auto action = CreateActionBundle(
-        cmd->Digest(), exec_dir, output_node_properties, do_not_cache, timeout);
+    auto action =
+        CreateActionBundle(cmd->Digest(), exec_dir, do_not_cache, timeout);
 
     if (store_blob) {
         (*store_blob)(cmd->MakeBlob(/*is_exec=*/false));

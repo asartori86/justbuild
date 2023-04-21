@@ -23,13 +23,13 @@
     [ "bazel_msg"
     , "directory_tree"
     , ["src/buildtool/common", "common"]
+    , ["src/buildtool/compatibility", "compatibility"]
     , ["src/buildtool/file_system", "git_repo"]
     , ["src/buildtool/execution_engine/dag", "dag"]
     , ["src/buildtool/common", "bazel_types"]
     ]
   , "private-deps":
-    [ ["src/buildtool/compatibility", "compatibility"]
-    , ["src/utils/cpp", "hex_string"]
+    [ ["src/utils/cpp", "hex_string"]
     , ["@", "gsl-lite", "", "gsl-lite"]
     , ["src/buildtool/file_system", "file_system_manager"]
     ]
